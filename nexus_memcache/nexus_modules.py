@@ -1,12 +1,40 @@
 import socket
 import warnings
+from collections import OrderedDict
 
-from django.core.cache import get_cache, parse_backend_uri
-from django.utils.datastructures import SortedDict
+from django.core.cache import caches
 
 import nexus
 
 from nexus_memcache import conf
+
+def parse_backend_uri(backend_uri):
+    """
+    Converts the "backend_uri" into a cache scheme ('db', 'memcached', etc), a
+    host and any extra params that are required for the backend. Returns a
+    (scheme, host, params) tuple.
+    """
+    from django.core.cache.backends.base import InvalidCacheBackendError
+    from urlparse import parse_qsl
+
+    if backend_uri.find(':') == -1:
+        raise InvalidCacheBackendError("Backend URI must start with scheme://")
+    scheme, rest = backend_uri.split(':', 1)
+    if not rest.startswith('//'):
+        raise InvalidCacheBackendError("Backend URI must start with scheme://")
+
+    host = rest[2:]
+    qpos = rest.find('?')
+    if qpos != -1:
+        params = dict(parse_qsl(rest[qpos+1:]))
+        host = rest[2:qpos]
+    else:
+        params = {}
+    if host.endswith('/'):
+        host = host[:-1]
+
+    return scheme, host, params
+
 
 class MemcacheModule(nexus.NexusModule):
     home_url = 'index'
@@ -17,7 +45,7 @@ class MemcacheModule(nexus.NexusModule):
         schema, hosts, params = parse_backend_uri(conf.BACKEND)
         for host in hosts.split(';'):
             try:
-                caches.append((host, get_cache('%s://%s?%s' % (schema, host, params))._cache))
+                caches.append((host, caches['%s://%s?%s' % (schema, host, params)]._cache))
             except Exception, e:
                 self.logger.exception(e)
         return caches
@@ -40,7 +68,7 @@ class MemcacheModule(nexus.NexusModule):
         return 'Memcache'
     
     def get_urls(self):
-        from django.conf.urls.defaults import patterns, url
+        from django.conf.urls import patterns, url
 
         urlpatterns = patterns('',
             url(r'^$', self.as_view(self.index), name='index'),
@@ -79,7 +107,7 @@ class MemcacheModule(nexus.NexusModule):
     
     def index(self, request):
         try:
-            cache_stats = ((k, SortedDict(sorted(v.iteritems(), key=lambda x: x[0]))) for k, v in self.get_stats())
+            cache_stats = ((k, OrderedDict(sorted(v.iteritems(), key=lambda x: x[0]))) for k, v in self.get_stats())
         except AttributeError:
             cache_stats = []
         
