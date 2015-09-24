@@ -2,7 +2,7 @@ import socket
 import warnings
 from collections import OrderedDict
 
-from django.core.cache import get_cache
+from django.core.cache import caches
 
 import nexus
 
@@ -45,7 +45,7 @@ class MemcacheModule(nexus.NexusModule):
         schema, hosts, params = parse_backend_uri(conf.BACKEND)
         for host in hosts.split(';'):
             try:
-                caches.append((host, get_cache('%s://%s?%s' % (schema, host, params))._cache))
+                caches.append((host, caches['%s://%s?%s' % (schema, host, params)]._cache))
             except Exception, e:
                 self.logger.exception(e)
         return caches
