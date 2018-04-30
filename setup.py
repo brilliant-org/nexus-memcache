@@ -27,7 +27,7 @@ setup(
     packages=find_packages(),
     zip_safe=False,
     install_requires=[
-        'nexus>=0.1.3',
+        'nexus-yplan>=1.6.0',
     ],
     test_suite = 'nexus_memcache.tests',
     include_package_data=True,
