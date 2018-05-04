@@ -39,7 +39,7 @@ def parse_backend_uri(backend_uri):
 class MemcacheModule(nexus.NexusModule):
     home_url = 'index'
     name = 'memcache'
-    
+
     def get_caches(self):
         caches = []
         schema, hosts, params = parse_backend_uri(conf.BACKEND)
@@ -49,7 +49,7 @@ class MemcacheModule(nexus.NexusModule):
             except Exception, e:
                 self.logger.exception(e)
         return caches
-    
+
     def get_stats(self, timeout=5):
         for host, cache in self.get_caches():
             default_timeout = socket.getdefaulttimeout()
@@ -63,26 +63,26 @@ class MemcacheModule(nexus.NexusModule):
             finally:
                 socket.setdefaulttimeout(default_timeout)
             yield host, stats
-    
+
     def get_title(self):
         return 'Memcache'
-    
-    def get_urls(self):
-        from django.conf.urls import patterns, url
 
-        urlpatterns = patterns('',
+    def get_urls(self):
+        from django.conf.urls import url
+
+        urlpatterns = [
             url(r'^$', self.as_view(self.index), name='index'),
-        )
-        
+        ]
+
         return urlpatterns
-    
+
     def render_on_dashboard(self, request):
         try:
             cache_stats = list(self.get_stats())
         except AttributeError:
             warnings.warn('`get_stats()` not found on cache backend')
             cache_stats = []
-        
+
         global_stats = {
             'bytes': 0,
             'limit_maxbytes': 0,
@@ -104,13 +104,13 @@ class MemcacheModule(nexus.NexusModule):
         return self.render_to_string('nexus/memcache/dashboard.html', {
             'global_stats': global_stats,
         })
-    
+
     def index(self, request):
         try:
             cache_stats = ((k, OrderedDict(sorted(v.iteritems(), key=lambda x: x[0]))) for k, v in self.get_stats())
         except AttributeError:
             cache_stats = []
-        
+
         return self.render_to_response("nexus/memcache/index.html", {
             'cache_stats': cache_stats,
         }, request)
