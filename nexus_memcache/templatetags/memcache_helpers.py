@@ -32,5 +32,5 @@ register.filter(duration)
 register.filter('int', lambda x: int(x))
 
 def titlize(value):
-    return unicode(value).title().replace('_', ' ')
+    return str(value).title().replace('_', ' ')
 register.filter(titlize)

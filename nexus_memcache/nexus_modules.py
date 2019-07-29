@@ -15,7 +15,7 @@ def parse_backend_uri(backend_uri):
     (scheme, host, params) tuple.
     """
     from django.core.cache.backends.base import InvalidCacheBackendError
-    from urlparse import parse_qsl
+    from urllib.parse import parse_qsl
 
     if backend_uri.find(':') == -1:
         raise InvalidCacheBackendError("Backend URI must start with scheme://")
@@ -46,7 +46,7 @@ class MemcacheModule(nexus.NexusModule):
         for host in hosts.split(';'):
             try:
                 caches.append((host, caches['%s://%s?%s' % (schema, host, params)]._cache))
-            except Exception, e:
+            except Exception as e:
                 self.logger.exception(e)
         return caches
 
@@ -97,7 +97,7 @@ class MemcacheModule(nexus.NexusModule):
             'online': 0,
         }
         for host, stats in cache_stats:
-            for k in global_stats.iterkeys():
+            for k in global_stats.keys():
                 global_stats[k] += float(stats.get(k, 0))
         global_stats['total'] = len(cache_stats)
 
@@ -107,7 +107,7 @@ class MemcacheModule(nexus.NexusModule):
 
     def index(self, request):
         try:
-            cache_stats = ((k, OrderedDict(sorted(v.iteritems(), key=lambda x: x[0]))) for k, v in self.get_stats())
+            cache_stats = ((k, OrderedDict(sorted(v.items(), key=lambda x: x[0]))) for k, v in self.get_stats())
         except AttributeError:
             cache_stats = []
 
