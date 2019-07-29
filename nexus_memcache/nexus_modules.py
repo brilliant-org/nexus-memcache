@@ -15,7 +15,10 @@ def parse_backend_uri(backend_uri):
     (scheme, host, params) tuple.
     """
     from django.core.cache.backends.base import InvalidCacheBackendError
-    from urllib.parse import parse_qsl
+    try:
+        from urllib.parse import parse_qsl
+    except:
+        from urlparse import parse_qsl
 
     if backend_uri.find(':') == -1:
         raise InvalidCacheBackendError("Backend URI must start with scheme://")
